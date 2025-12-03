@@ -1,0 +1,72 @@
+{
+  "navigation": {
+    "Taller": [
+      {
+        "name": "Dashboard",
+        "icon": "tabler-dashboard",
+        "url": "/"
+      },
+      {
+        "name": "Clientes",
+        "icon": "tabler-users",
+        "url": "clientes"
+      },
+      {
+        "name": "Vehículos",
+        "icon": "tabler-truck",
+        "url": "vehiculos"
+      },
+      {
+        "name": "Órdenes de Trabajo",
+        "icon": "tabler-clipboard-check",
+        "url": "ordenes-trabajo"
+      },
+      {
+        "name": "Finanzas",
+        "icon": "tabler-chart-bar",
+        "url": "finanzas"
+      },
+      {
+        "name": "Calendario",
+        "icon": "tabler-calendar",
+        "url": "calendario"
+      }
+    ],
+    "Configuración": [
+      {
+        "name": "Marcas",
+        "icon": "tabler-brand-apple",
+        "url": "configuracion/marcas"
+      },
+      {
+        "name": "Modelos",
+        "icon": "tabler-car",
+        "url": "configuracion/modelos"
+      },
+      {
+        "name": "Usuarios",
+        "icon": "tabler-users",
+        "url": "configuracion/usuarios"
+      }
+    ]
+  },
+  "suggestions": {
+    "Taller": [
+      {
+        "name": "Dashboard",
+        "icon": "tabler-dashboard",
+        "url": "/"
+      },
+      {
+        "name": "Crear Orden de Trabajo",
+        "icon": "tabler-plus",
+        "url": "ordenes-trabajo"
+      },
+      {
+        "name": "Nuevo Cliente",
+        "icon": "tabler-user-plus",
+        "url": "clientes"
+      }
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "menu": [
+    {
+      "url": "/",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base ti tabler-dashboard",
+      "slug": "dashboard"
+    },
+    {
+      "url": "clientes",
+      "name": "Clientes",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "slug": "clientes"
+    },
+    {
+      "url": "vehiculos",
+      "name": "Vehículos",
+      "icon": "menu-icon icon-base ti tabler-truck",
+      "slug": "vehiculos"
+    },
+    {
+      "url": "ordenes-trabajo",
+      "name": "Órdenes de Trabajo",
+      "icon": "menu-icon icon-base ti tabler-clipboard-check",
+      "slug": "ordenes-trabajo"
+    },
+    {
+      "url": "finanzas",
+      "name": "Finanzas",
+      "icon": "menu-icon icon-base ti tabler-chart-bar",
+      "slug": "finanzas"
+    },
+    {
+      "url": "calendario",
+      "name": "Calendario",
+      "icon": "menu-icon icon-base ti tabler-calendar",
+      "slug": "calendario"
+    },
+    {
+      "name": "Configuración",
+      "icon": "menu-icon icon-base ti tabler-settings",
+      "slug": "configuracion",
+      "submenu": [
+        {
+          "url": "configuracion/marcas",
+          "name": "Marcas",
+          "icon": "menu-icon icon-base ti tabler-brand-apple",
+          "slug": "configuracion-marcas"
+        },
+        {
+          "url": "configuracion/modelos",
+          "name": "Modelos",
+          "icon": "menu-icon icon-base ti tabler-car",
+          "slug": "configuracion-modelos"
+        },
+        {
+          "url": "configuracion/usuarios",
+          "name": "Usuarios",
+          "icon": "menu-icon icon-base ti tabler-users",
+          "slug": "configuracion-usuarios"
+        }
+      ]
+    }
+  ]
+}
