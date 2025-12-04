@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\OrdenTrabajo;
 use App\Models\Cliente;
+use Carbon\Carbon;
 
 class CalendarioController extends Controller
 {
@@ -20,6 +21,13 @@ class CalendarioController extends Controller
 
     if ($request->has('cliente_id') && $request->cliente_id) {
       $query->where('cliente_id', $request->cliente_id);
+    }
+
+    // FullCalendar envía automáticamente 'start' y 'end' en formato ISO8601 (YYYY-MM-DD...)
+    if ($request->has('start') && $request->has('end')) {
+      $start = Carbon::parse($request->start)->startOfDay();
+      $end = Carbon::parse($request->end)->endOfDay();
+      $query->whereBetween('created_at', [$start, $end]);
     }
 
     $ordenes = $query->get();
