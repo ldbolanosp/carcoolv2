@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
   if (offcanvasEl) {
     offcanvasEl.addEventListener('shown.bs.offcanvas', function () {
       initSelect2();
+      // Configurar el listener para el cambio de tipo de orden
+      setupTipoOrdenListener();
     });
   }
 
@@ -63,6 +65,85 @@ document.addEventListener('DOMContentLoaded', function (e) {
         });
       }
     });
+  }
+
+  // Función para mostrar/ocultar el campo de espacio de trabajo
+  function toggleEspacioTrabajo(tipo) {
+    const container = document.getElementById('espacio-trabajo-container');
+    if (container) {
+      if (tipo === 'Taller') {
+        container.style.display = 'block';
+      } else {
+        container.style.display = 'none';
+        // Limpiar selección cuando no es Taller
+        $('#add-orden-espacio').val('').trigger('change');
+      }
+    }
+  }
+
+  // Configurar listener para el cambio de tipo de orden
+  function setupTipoOrdenListener() {
+    const tipoOrdenSelect = document.getElementById('add-orden-tipo');
+    if (tipoOrdenSelect) {
+      // Usar evento de Select2
+      $(tipoOrdenSelect).off('change.espacioTrabajo').on('change.espacioTrabajo', function () {
+        toggleEspacioTrabajo(this.value);
+        // Revalidar el campo espacio_trabajo cuando cambia el tipo
+        if (typeof fv !== 'undefined') {
+          fv.revalidateField('espacio_trabajo');
+        }
+      });
+      // Verificar estado inicial
+      toggleEspacioTrabajo(tipoOrdenSelect.value);
+    }
+  }
+
+  // Variable global para el validador del formulario
+  let fv;
+
+  // Función para cargar espacios disponibles dinámicamente
+  async function cargarEspaciosDisponibles(exceptoOrdenId = null) {
+    try {
+      let url = baseUrl + 'ordenes-trabajo/espacios-disponibles';
+      if (exceptoOrdenId) {
+        url += `?excepto_orden_id=${exceptoOrdenId}`;
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const selectEspacio = document.getElementById('add-orden-espacio');
+      if (selectEspacio) {
+        // Guardar valor actual si existe
+        const valorActual = $(selectEspacio).val();
+
+        // Limpiar opciones existentes
+        selectEspacio.innerHTML = '<option value="">Seleccionar espacio</option>';
+
+        // Agregar todas las opciones
+        for (let i = 1; i <= data.total_espacios; i++) {
+          const option = document.createElement('option');
+          option.value = i;
+          const disponible = data.espacios_disponibles.includes(i);
+          option.textContent = `Espacio ${i}${disponible ? '' : ' (Ocupado)'}`;
+          option.disabled = !disponible;
+          selectEspacio.appendChild(option);
+        }
+
+        // Restaurar valor si aún está disponible o es el espacio de la orden actual
+        if (valorActual) {
+          $(selectEspacio).val(valorActual).trigger('change');
+        }
+
+        // Actualizar texto de ayuda
+        const formText = selectEspacio.parentElement.querySelector('.form-text');
+        if (formText) {
+          formText.innerHTML = `<span class="text-success">${data.espacios_disponibles.length}</span> de ${data.total_espacios} espacios disponibles`;
+        }
+      }
+    } catch (error) {
+      console.error('Error al cargar espacios disponibles:', error);
+    }
   }
 
   // ajax setup
@@ -94,6 +175,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         { data: 'id' },
         { data: 'id' },
         { data: 'tipo_orden' },
+        { data: 'espacio_trabajo' },
         { data: 'cliente_nombre' },
         { data: 'vehiculo_placa' },
         { data: 'motivo_ingreso' },
@@ -134,12 +216,23 @@ document.addEventListener('DOMContentLoaded', function (e) {
           targets: 3,
           responsivePriority: 4,
           render: function (data, type, full, meta) {
+            const espacio = full['espacio_trabajo'];
+            if (espacio) {
+              return `<span class="badge bg-label-success">E${espacio}</span>`;
+            }
+            return '<span class="text-muted">-</span>';
+          }
+        },
+        {
+          targets: 4,
+          responsivePriority: 4,
+          render: function (data, type, full, meta) {
             const nombre = full['cliente_nombre'] || '';
             return `<span class="fw-medium">${nombre}</span>`;
           }
         },
         {
-          targets: 4,
+          targets: 5,
           responsivePriority: 4,
           render: function (data, type, full, meta) {
             const placa = full['vehiculo_placa'] || '';
@@ -148,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          targets: 5,
+          targets: 6,
           render: function (data, type, full, meta) {
             const motivo = full['motivo_ingreso'] || '';
             const truncated = motivo.length > 50 ? motivo.substring(0, 50) + '...' : motivo;
@@ -156,21 +249,21 @@ document.addEventListener('DOMContentLoaded', function (e) {
           }
         },
         {
-          targets: 6,
+          targets: 7,
           render: function (data, type, full, meta) {
             const km = full['km_actual'];
             return km ? `<span>${km.toLocaleString()} km</span>` : '<span>-</span>';
           }
         },
         {
-          targets: 7,
+          targets: 8,
           render: function (data, type, full, meta) {
             const etapa = full['etapa_actual'] || '';
             return `<span class="badge bg-label-warning">${etapa}</span>`;
           }
         },
         {
-          targets: 8,
+          targets: 9,
           render: function (data, type, full, meta) {
             const fecha = full['created_at'] || '';
             return `<span>${fecha}</span>`;
@@ -383,9 +476,27 @@ document.addEventListener('DOMContentLoaded', function (e) {
 
         fetch(`${baseUrl}ordenes-trabajo/${orden_id}`)
           .then(response => response.json())
-          .then(data => {
+          .then(async data => {
             document.getElementById('orden_trabajo_id').value = data.id;
+
+            // Cargar espacios disponibles primero (excluyendo la orden actual)
+            await cargarEspaciosDisponibles(data.id);
+
+            // Configurar tipo de orden y mostrar/ocultar campo de espacio
             $('#add-orden-tipo').val(data.tipo_orden).trigger('change');
+            toggleEspacioTrabajo(data.tipo_orden);
+
+            // Si tiene espacio asignado, habilitarlo y seleccionarlo
+            if (data.espacio_trabajo) {
+              const selectEspacio = document.getElementById('add-orden-espacio');
+              const option = selectEspacio.querySelector(`option[value="${data.espacio_trabajo}"]`);
+              if (option) {
+                option.disabled = false;
+                option.textContent = `Espacio ${data.espacio_trabajo} (Actual)`;
+              }
+              $('#add-orden-espacio').val(data.espacio_trabajo).trigger('change');
+            }
+
             $('#add-orden-cliente').val(data.cliente_id).trigger('change');
             $('#add-orden-vehiculo').val(data.vehiculo_id).trigger('change');
             document.getElementById('add-orden-motivo').value = data.motivo_ingreso;
@@ -398,13 +509,18 @@ document.addEventListener('DOMContentLoaded', function (e) {
     // changing the title
     const addNewBtn = document.querySelector('.add-new');
     if (addNewBtn) {
-      addNewBtn.addEventListener('click', function () {
+      addNewBtn.addEventListener('click', async function () {
         document.getElementById('orden_trabajo_id').value = '';
         $('#add-orden-tipo').val('').trigger('change');
+        $('#add-orden-espacio').val('').trigger('change');
         $('#add-orden-cliente').val('').trigger('change');
         $('#add-orden-vehiculo').val('').trigger('change');
         document.getElementById('add-orden-motivo').value = '';
         document.getElementById('add-orden-km').value = '';
+        // Ocultar campo de espacio
+        toggleEspacioTrabajo('');
+        // Cargar espacios disponibles para nueva orden
+        await cargarEspaciosDisponibles();
         // La etapa se establece automáticamente en el backend
         document.getElementById('offcanvasAddOrdenTrabajoLabel').innerHTML = 'Agregar Orden de Trabajo';
       });
@@ -415,12 +531,27 @@ document.addEventListener('DOMContentLoaded', function (e) {
   const addNewOrdenTrabajoForm = document.getElementById('addNewOrdenTrabajoForm');
 
   if (addNewOrdenTrabajoForm) {
-    const fv = FormValidation.formValidation(addNewOrdenTrabajoForm, {
+    fv = FormValidation.formValidation(addNewOrdenTrabajoForm, {
       fields: {
         tipo_orden: {
           validators: {
             notEmpty: {
               message: 'Por favor seleccione el tipo de orden'
+            }
+          }
+        },
+        espacio_trabajo: {
+          validators: {
+            callback: {
+              message: 'Por favor seleccione un espacio de trabajo',
+              callback: function (input) {
+                const tipoOrden = document.getElementById('add-orden-tipo').value;
+                // Solo es requerido si el tipo es Taller
+                if (tipoOrden === 'Taller') {
+                  return input.value !== '';
+                }
+                return true;
+              }
             }
           }
         },
@@ -548,8 +679,11 @@ document.addEventListener('DOMContentLoaded', function (e) {
 
           addNewOrdenTrabajoForm.reset();
           $('#add-orden-tipo').val('').trigger('change');
+          $('#add-orden-espacio').val('').trigger('change');
           $('#add-orden-cliente').val('').trigger('change');
           $('#add-orden-vehiculo').val('').trigger('change');
+          // Ocultar campo de espacio
+          toggleEspacioTrabajo('');
           // La etapa se establece automáticamente en el backend
         })
         .catch(error => {

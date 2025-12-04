@@ -11,8 +11,14 @@ class OrdenTrabajo extends Model
 
     protected $table = 'ordenes_trabajo';
 
+    /**
+     * Total de espacios de trabajo disponibles en el taller
+     */
+    public const TOTAL_ESPACIOS = 16;
+
     protected $fillable = [
         'tipo_orden',
+        'espacio_trabajo',
         'cliente_id',
         'vehiculo_id',
         'motivo_ingreso',
@@ -28,10 +34,74 @@ class OrdenTrabajo extends Model
 
     protected $casts = [
         'km_actual' => 'integer',
+        'espacio_trabajo' => 'integer',
         'duracion_diagnostico' => 'decimal:2',
         'repuestos_entregados' => 'boolean',
         'tiquete_impreso' => 'boolean',
     ];
+
+    /**
+     * Obtener los espacios de trabajo ocupados
+     * Solo se consideran ocupados los espacios de órdenes activas (no cerradas ni finalizadas con entrega)
+     */
+    public static function espaciosOcupados(): array
+    {
+        return self::whereNotNull('espacio_trabajo')
+            ->where('tipo_orden', 'Taller')
+            ->whereNotIn('etapa_actual', ['Cerrada'])
+            ->where(function ($query) {
+                $query->where('estado', '!=', 'Cerrada')
+                    ->orWhereNull('estado');
+            })
+            ->pluck('espacio_trabajo')
+            ->toArray();
+    }
+
+    /**
+     * Obtener los espacios de trabajo disponibles
+     */
+    public static function espaciosDisponibles(): array
+    {
+        $ocupados = self::espaciosOcupados();
+        $disponibles = [];
+
+        for ($i = 1; $i <= self::TOTAL_ESPACIOS; $i++) {
+            if (!in_array($i, $ocupados)) {
+                $disponibles[] = $i;
+            }
+        }
+
+        return $disponibles;
+    }
+
+    /**
+     * Verificar si un espacio está disponible
+     */
+    public static function espacioDisponible(int $espacio, ?int $exceptoOrdenId = null): bool
+    {
+        $query = self::where('espacio_trabajo', $espacio)
+            ->where('tipo_orden', 'Taller')
+            ->whereNotIn('etapa_actual', ['Cerrada'])
+            ->where(function ($q) {
+                $q->where('estado', '!=', 'Cerrada')
+                    ->orWhereNull('estado');
+            });
+
+        if ($exceptoOrdenId) {
+            $query->where('id', '!=', $exceptoOrdenId);
+        }
+
+        return !$query->exists();
+    }
+
+    /**
+     * Liberar el espacio de trabajo de esta orden
+     */
+    public function liberarEspacio(): void
+    {
+        $this->espacio_trabajo = null;
+        $this->save();
+    }
 
     /**
      * Relación con cliente

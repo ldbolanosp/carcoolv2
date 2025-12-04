@@ -169,6 +169,7 @@ use App\Http\Controllers\TiqueteRepuestosController;
 use App\Http\Controllers\FinanceController;
 
 use App\Http\Controllers\dashboard\DashboardTallerController;
+use App\Http\Controllers\TallerController;
 
 // Main Page Route
 
@@ -378,6 +379,13 @@ Route::middleware([
   // Route::get('/dashboard', [DashboardTallerController::class, 'index'])->name('dashboard-taller');
   Route::get('/dashboard', [DashboardTallerController::class, 'index'])->name('dashboard');
 
+  // Taller - Espacios de trabajo
+  Route::prefix('taller')->group(function () {
+    Route::get('/', [TallerController::class, 'index'])->name('taller.index')->middleware('can:ver_ordenes');
+    Route::get('/espacios-data', [TallerController::class, 'getEspacios'])->name('taller.espacios-data')->middleware('can:ver_ordenes');
+    Route::post('/actualizar-espacio', [TallerController::class, 'actualizarEspacio'])->name('taller.actualizar-espacio')->middleware('can:ver_ordenes');
+  });
+
   // Configuración
   Route::prefix('configuracion')->group(function () {
     // Marcas
@@ -437,6 +445,7 @@ Route::middleware([
   Route::prefix('ordenes-trabajo')->group(function () {
     Route::get('/', [OrdenTrabajoController::class, 'index'])->name('ordenes-trabajo')->middleware('can:ver_ordenes');
     Route::get('/list', [OrdenTrabajoController::class, 'list'])->name('ordenes-trabajo-list')->middleware('can:ver_ordenes');
+    Route::get('/espacios-disponibles', [OrdenTrabajoController::class, 'espaciosDisponibles'])->name('ordenes-trabajo-espacios-disponibles')->middleware('can:ver_ordenes');
     Route::post('/', [OrdenTrabajoController::class, 'store'])->name('ordenes-trabajo-store')->middleware('can:crear_ordenes');
     Route::get('/{id}', [OrdenTrabajoController::class, 'show'])->name('ordenes-trabajo-show')->middleware('can:ver_ordenes');
     Route::get('/{id}/modal-data', [OrdenTrabajoController::class, 'getModalData'])->name('ordenes-trabajo-modal-data')->middleware('can:ver_ordenes');

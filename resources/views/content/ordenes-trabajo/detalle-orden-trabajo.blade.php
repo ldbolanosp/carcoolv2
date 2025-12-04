@@ -44,6 +44,11 @@
         <span class="badge bg-label-{{ $orden->tipo_orden === 'Taller' ? 'primary' : 'info' }} me-1 ms-2">
           {{ $orden->tipo_orden }}
         </span>
+        @if ($orden->tipo_orden === 'Taller' && $orden->espacio_trabajo)
+          <span class="badge bg-label-success me-1">
+            <i class="icon-base ti tabler-parking icon-xs me-1"></i>Espacio {{ $orden->espacio_trabajo }}
+          </span>
+        @endif
         <span class="badge bg-label-warning">
           {{ $orden->etapa_actual }}
         </span>
@@ -331,7 +336,20 @@ if ($isCurrent) {
               <p class="text-body">
                 {{ $orden->km_actual ? number_format($orden->km_actual, 0, ',', '.') . ' km' : 'No registrado' }}</p>
             </div>
-
+            @if ($orden->tipo_orden === 'Taller')
+            <div class="col-md-6 mb-3">
+              <h6 class="mb-1">Espacio de Trabajo</h6>
+              <p class="text-body">
+                @if ($orden->espacio_trabajo)
+                  <span class="badge bg-label-success fs-6">
+                    <i class="icon-base ti tabler-parking icon-sm me-1"></i>Espacio {{ $orden->espacio_trabajo }}
+                  </span>
+                @else
+                  <span class="text-muted">No asignado</span>
+                @endif
+              </p>
+            </div>
+            @endif
           </div>
         </div>
       </div>

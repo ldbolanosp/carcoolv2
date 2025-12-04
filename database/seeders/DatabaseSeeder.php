@@ -22,5 +22,8 @@ class DatabaseSeeder extends Seeder
       'name' => 'Test User',
       'email' => 'test@example.com',
     ]);
+
+    // Migración de datos desde cctallerv3 (descomentar solo cuando se necesite ejecutar)
+    // $this->call(MigrateCarcoolDataSeeder::class);
   }
 }

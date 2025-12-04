@@ -37,6 +37,7 @@ class OrdenTrabajoController extends Controller
 
     $clientes = Cliente::orderBy('nombre')->get();
     $vehiculos = Vehiculo::with(['marca', 'modelo'])->orderBy('placa')->get();
+    $espaciosDisponibles = OrdenTrabajo::espaciosDisponibles();
 
     /** @var User $user */
     $user = Auth::user();
@@ -47,7 +48,39 @@ class OrdenTrabajoController extends Controller
       // Add more if needed for list view logic
     ];
 
-    return view('content.ordenes-trabajo.ordenes-trabajo', compact('clientes', 'vehiculos', 'userPermissions'));
+    return view('content.ordenes-trabajo.ordenes-trabajo', compact('clientes', 'vehiculos', 'userPermissions', 'espaciosDisponibles'));
+  }
+
+  /**
+   * Get available workspace slots
+   */
+  public function espaciosDisponibles(Request $request): JsonResponse
+  {
+    $this->authorize('viewAny', OrdenTrabajo::class);
+
+    $exceptoOrdenId = $request->query('excepto_orden_id');
+    $espaciosOcupados = OrdenTrabajo::espaciosOcupados();
+
+    // Si estamos editando una orden, excluir su espacio de los ocupados
+    if ($exceptoOrdenId) {
+      $orden = OrdenTrabajo::find($exceptoOrdenId);
+      if ($orden && $orden->espacio_trabajo) {
+        $espaciosOcupados = array_filter($espaciosOcupados, fn($e) => $e != $orden->espacio_trabajo);
+      }
+    }
+
+    $disponibles = [];
+    for ($i = 1; $i <= OrdenTrabajo::TOTAL_ESPACIOS; $i++) {
+      if (!in_array($i, $espaciosOcupados)) {
+        $disponibles[] = $i;
+      }
+    }
+
+    return response()->json([
+      'espacios_disponibles' => $disponibles,
+      'total_espacios' => OrdenTrabajo::TOTAL_ESPACIOS,
+      'espacios_ocupados' => count($espaciosOcupados),
+    ]);
   }
 
   /**
@@ -110,6 +143,7 @@ class OrdenTrabajoController extends Controller
         'id' => $orden->id,
         'fake_id' => ++$ids,
         'tipo_orden' => $orden->tipo_orden,
+        'espacio_trabajo' => $orden->espacio_trabajo,
         'cliente_id' => $orden->cliente_id,
         'cliente_nombre' => $orden->cliente->nombre ?? '',
         'vehiculo_id' => $orden->vehiculo_id,
@@ -148,7 +182,27 @@ class OrdenTrabajoController extends Controller
       'km_actual' => 'nullable|integer|min:0',
     ];
 
+    // Si es tipo Taller, el espacio es requerido
+    if ($request->tipo_orden === 'Taller') {
+      $rules['espacio_trabajo'] = 'required|integer|min:1|max:' . OrdenTrabajo::TOTAL_ESPACIOS;
+    }
+
     $request->validate($rules);
+
+    // Validar que el espacio esté disponible si es tipo Taller
+    if ($request->tipo_orden === 'Taller') {
+      $espacioDisponible = OrdenTrabajo::espacioDisponible(
+        (int) $request->espacio_trabajo,
+        $ordenId ? (int) $ordenId : null
+      );
+
+      if (!$espacioDisponible) {
+        return response()->json([
+          'message' => 'El espacio de trabajo seleccionado ya está ocupado',
+          'errors' => ['espacio_trabajo' => ['El espacio de trabajo seleccionado ya está ocupado. Por favor, seleccione otro.']]
+        ], 422);
+      }
+    }
 
     if ($ordenId) {
       // Update existing orden (no se permite cambiar la etapa desde aquí)
@@ -157,26 +211,43 @@ class OrdenTrabajoController extends Controller
       // Use update policy if exists, or fallback to create as general edit permission
       $this->authorize('update', $orden);
 
-      $orden->update([
+      $updateData = [
         'tipo_orden' => $request->tipo_orden,
         'cliente_id' => $request->cliente_id,
         'vehiculo_id' => $request->vehiculo_id,
         'motivo_ingreso' => $request->motivo_ingreso,
         'km_actual' => $request->km_actual,
         // La etapa no se modifica desde el formulario de edición
-      ]);
+      ];
+
+      // Manejar espacio de trabajo según el tipo
+      if ($request->tipo_orden === 'Taller') {
+        $updateData['espacio_trabajo'] = $request->espacio_trabajo;
+      } else {
+        // Si cambia a Domicilio, liberar el espacio
+        $updateData['espacio_trabajo'] = null;
+      }
+
+      $orden->update($updateData);
 
       return response()->json('Updated');
     } else {
       // Create new orden - siempre inicia en "Toma de fotografías"
-      OrdenTrabajo::create([
+      $createData = [
         'tipo_orden' => $request->tipo_orden,
         'cliente_id' => $request->cliente_id,
         'vehiculo_id' => $request->vehiculo_id,
         'motivo_ingreso' => $request->motivo_ingreso,
         'km_actual' => $request->km_actual,
         'etapa_actual' => 'Toma de fotografías', // Siempre inicia en esta etapa
-      ]);
+      ];
+
+      // Asignar espacio solo si es tipo Taller
+      if ($request->tipo_orden === 'Taller') {
+        $createData['espacio_trabajo'] = $request->espacio_trabajo;
+      }
+
+      OrdenTrabajo::create($createData);
 
       return response()->json('Created');
     }
@@ -1104,9 +1175,11 @@ class OrdenTrabajoController extends Controller
       return response()->json(['error' => 'La orden debe estar en la etapa Finalizado para poder cerrarse'], 400);
     }
 
+    // Liberar el espacio de trabajo al cerrar la orden
     $orden->update([
       'estado' => 'Cerrada',
-      'etapa_actual' => 'Cerrada' // Also update stage to match new flow logic
+      'etapa_actual' => 'Cerrada', // Also update stage to match new flow logic
+      'espacio_trabajo' => null, // Liberar el espacio
     ]);
 
     return response()->json(['success' => true, 'message' => 'Orden de trabajo cerrada exitosamente']);

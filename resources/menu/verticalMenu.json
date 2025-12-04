@@ -7,6 +7,12 @@
       "slug": "dashboard-taller"
     },
     {
+      "url": "taller",
+      "name": "Taller",
+      "icon": "menu-icon icon-base ti tabler-building-warehouse",
+      "slug": "taller"
+    },
+    {
       "url": "clientes",
       "name": "Clientes",
       "icon": "menu-icon icon-base ti tabler-users",

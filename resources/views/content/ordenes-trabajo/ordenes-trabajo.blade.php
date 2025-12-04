@@ -35,6 +35,7 @@
             <th></th>
             <th>Id</th>
             <th>Tipo</th>
+            <th>Espacio</th>
             <th>Cliente</th>
             <th>Vehículo</th>
             <th>Motivo</th>
@@ -63,6 +64,20 @@
               <option value="Taller">Taller</option>
               <option value="Domicilio">Domicilio</option>
             </select>
+          </div>
+          <div class="mb-6 form-control-validation" id="espacio-trabajo-container" style="display: none;">
+            <label class="form-label" for="add-orden-espacio">Espacio de Trabajo <span class="text-danger">*</span></label>
+            <select id="add-orden-espacio" class="select2 form-select" name="espacio_trabajo">
+              <option value="">Seleccionar espacio</option>
+              @for ($i = 1; $i <= 16; $i++)
+                <option value="{{ $i }}" {{ in_array($i, $espaciosDisponibles) ? '' : 'disabled' }}>
+                  Espacio {{ $i }} {{ in_array($i, $espaciosDisponibles) ? '' : '(Ocupado)' }}
+                </option>
+              @endfor
+            </select>
+            <div class="form-text">
+              <span class="text-success">{{ count($espaciosDisponibles) }}</span> de 16 espacios disponibles
+            </div>
           </div>
           <div class="mb-6 form-control-validation">
             <label class="form-label" for="add-orden-cliente">Cliente <span class="text-danger">*</span></label>
