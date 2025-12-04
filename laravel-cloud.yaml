@@ -1,0 +1,8 @@
+build:
+  composer:
+    cache: true
+
+  javascript:
+    cache: true # caches node_modules (HUGE speed-up)
+
+  assets: true # runs Vite build
