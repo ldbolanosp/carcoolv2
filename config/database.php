@@ -112,6 +112,33 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Source Database Connection (for data migration from GoDaddy/cPanel)
+        |--------------------------------------------------------------------------
+        |
+        | This connection is used to migrate data from the legacy database.
+        | Configure the DB_SOURCE_* environment variables to connect.
+        |
+        */
+        'mysql_source' => [
+            'driver' => 'mysql',
+            'host' => env('DB_SOURCE_HOST', '127.0.0.1'),
+            'port' => env('DB_SOURCE_PORT', '3306'),
+            'database' => env('DB_SOURCE_DATABASE', 'cctallerv3'),
+            'username' => env('DB_SOURCE_USERNAME', 'root'),
+            'password' => env('DB_SOURCE_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
     ],
 
     /*
