@@ -82,6 +82,7 @@ const libsJsFiles = [
   'resources/assets/vendor/libs/@form-validation/auto-focus.js',
   'resources/assets/vendor/libs/dropzone/dropzone.js',                      // Subir fotos
   'resources/assets/vendor/libs/fullcalendar/fullcalendar.js',              // Calendario
+  'resources/assets/vendor/libs/moment/moment.js',                          // Fechas
 ];
 
 // =========================================================================
