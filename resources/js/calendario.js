@@ -53,10 +53,33 @@ document.addEventListener('DOMContentLoaded', function () {
           };
         }
       },
+      eventContent: function (arg) {
+        const props = arg.event.extendedProps;
+        const ordenId = props.orden_id;
+        const placa = props.vehiculo;
+        const unidad = props.unidad ? `<div>Unidad: ${props.unidad}</div>` : '';
+
+        // Create custom HTML structure
+        // Using styling that allows wrapping and multiple lines
+        const customHtml = `
+          <div class="fc-event-main-frame d-block text-wrap" style="white-space: normal !important; overflow: hidden;">
+             <div class="fw-bold">OT #${ordenId}</div>
+             <div>${placa}</div>
+             ${unidad}
+          </div>
+        `;
+
+        return { html: customHtml };
+      },
+      eventClassNames: function (arg) {
+        // Use bg-label-primary but ensure it behaves like a block with wrapping
+        return ['bg-label-primary', 'p-2', 'mb-1', 'rounded', 'shadow-sm', 'border-0', 'text-start'];
+      },
       eventClick: function (info) {
         info.jsEvent.preventDefault(); // Don't navigate
 
-        const ordenId = info.event.id;
+        // Use orden_id from extendedProps if id is not available directly or as a fallback
+        const ordenId = info.event.extendedProps.orden_id || info.event.id;
 
         // Fetch Details
         fetch(`/ordenes-trabajo/${ordenId}/modal-data`)
@@ -72,6 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
           });
       },
       eventDidMount: function (info) {
+        // Force style on element
+        info.el.style.whiteSpace = 'normal';
+        info.el.style.height = 'auto';
+        info.el.style.overflow = 'hidden';
+
         // Add tooltips or custom rendering if needed
         if (info.event.extendedProps.vehiculo) {
           info.el.setAttribute('title', info.event.extendedProps.vehiculo);

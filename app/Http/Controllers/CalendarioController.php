@@ -35,14 +35,15 @@ class CalendarioController extends Controller
     $events = $ordenes->map(function ($orden) {
       return [
         'id' => $orden->id,
-        'title' => 'OT #' . $orden->id . ' - ' . ($orden->vehiculo->placa ?? 'S/P'),
+        'title' => '', // We use content rendering
         'start' => $orden->created_at->toIso8601String(),
         'url' => route('ordenes-trabajo-detalle', $orden->id),
         'extendedProps' => [
-          'vehiculo' => ($orden->vehiculo->placa ?? 'S/P') . ' ' . ($orden->vehiculo->marca->nombre ?? '') . ' ' . ($orden->vehiculo->modelo->nombre ?? ''),
-          'etapa' => $orden->etapa_actual
+          'vehiculo' => ($orden->vehiculo->placa ?? 'S/P'),
+          'unidad' => $orden->vehiculo->numero_unidad ?? '',
+          'etapa' => $orden->etapa_actual,
+          'orden_id' => $orden->id
         ],
-        // Color coding based on etapa? Maybe later.
         'classNames' => ['event-orden-trabajo']
       ];
     });
